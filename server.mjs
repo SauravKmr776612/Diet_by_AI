@@ -115,14 +115,35 @@ function needsClinician(input) {
 }
 
 function fallbackResult(input) {
+  const mealsByPattern = {
+    vegan: [
+      { name: "Breakfast", idea: "Oatmeal made with a plant-based drink, topped with fruit and seeds.", portion: "A comfortable bowl; adjust to your appetite." },
+      { name: "Lunch", idea: "A grain bowl with beans, vegetables, and a dressing you enjoy.", portion: "Flexible portions based on your hunger and routine." },
+      { name: "Dinner", idea: "Tofu or lentils with vegetables and rice or another familiar grain.", portion: "Serve an amount that feels comfortable." },
+      { name: "Snack (optional)", idea: "Fruit with a plant-based yogurt or another snack you enjoy.", portion: "Optional; follow your hunger and schedule." }
+    ],
+    vegetarian: [
+      { name: "Breakfast", idea: "Oatmeal with fruit and a protein-rich topping you enjoy.", portion: "A comfortable bowl; adjust to your appetite." },
+      { name: "Lunch", idea: "A grain bowl with beans, vegetables, and a dressing you enjoy.", portion: "Flexible portions based on your hunger and routine." },
+      { name: "Dinner", idea: "Lentils, eggs, or another vegetarian protein with vegetables and a familiar grain.", portion: "Serve an amount that feels comfortable." },
+      { name: "Snack (optional)", idea: "Fruit with yogurt or another snack that suits your preferences.", portion: "Optional; follow your hunger and schedule." }
+    ],
+    pescatarian: [
+      { name: "Breakfast", idea: "Oatmeal with fruit and a protein-rich topping you enjoy.", portion: "A comfortable bowl; adjust to your appetite." },
+      { name: "Lunch", idea: "A grain bowl with beans, vegetables, and a dressing you enjoy.", portion: "Flexible portions based on your hunger and routine." },
+      { name: "Dinner", idea: "Fish or beans with vegetables and a familiar grain.", portion: "Serve an amount that feels comfortable." },
+      { name: "Snack (optional)", idea: "Fruit with yogurt or another snack that suits your preferences.", portion: "Optional; follow your hunger and schedule." }
+    ]
+  };
+  const meals = mealsByPattern[input.dietaryPattern] || [
+    { name: "Breakfast", idea: "Oatmeal with fruit and a protein-rich topping you enjoy.", portion: "A comfortable bowl; adjust to your appetite." },
+    { name: "Lunch", idea: "A grain or starch, vegetables, and a protein you enjoy.", portion: "Flexible portions based on your hunger and routine." },
+    { name: "Dinner", idea: "A satisfying combination of vegetables, a protein, and a familiar starch.", portion: "Serve an amount that feels comfortable." },
+    { name: "Snack (optional)", idea: "Fruit, yogurt, or another snack that suits your preferences.", portion: "Optional; follow your hunger and schedule." }
+  ];
   return {
     summary: `You selected a ${input.dietaryPattern.replace("-", " ")} pattern. Use these flexible ideas only if they fit your preferences and needs.`,
-    meals: [
-      { name: "Breakfast", idea: "Oatmeal with fruit and a protein-rich topping you enjoy.", portion: "A comfortable bowl; adjust to your appetite." },
-      { name: "Lunch", idea: "A grain or starch, vegetables, and a protein you enjoy.", portion: "Flexible portions based on your hunger and routine." },
-      { name: "Dinner", idea: "A satisfying combination of vegetables, a protein, and a familiar starch.", portion: "Serve an amount that feels comfortable." },
-      { name: "Snack (optional)", idea: "Fruit, yogurt, or another snack that suits your preferences.", portion: "Optional; follow your hunger and schedule." }
-    ],
+    meals,
     limitFoods: [
       { food: "Highly processed foods that are low in fiber", reason: "You may choose them less often if you prefer, while individual needs and circumstances differ." },
       { food: "Sugary drinks", reason: "Consider water or another preferred drink sometimes; there is no need for rigid rules." }
@@ -138,7 +159,8 @@ function fallbackResult(input) {
     ],
     disclaimer: DISCLAIMER,
     safeRedirect: false,
-    safeMessage: ""
+    safeMessage: "",
+    generalExample: true
   };
 }
 
@@ -342,7 +364,7 @@ export function createServer({ env = process.env } = {}) {
             clinician: ["Please check ingredient labels carefully. For severe allergies or uncertainty about safe foods, consult a doctor or registered dietitian."],
             disclaimer: DISCLAIMER,
             safeRedirect: true,
-            safeMessage: "We can't safely tailor meal ideas to a disclosed allergy without personalized processing. Please avoid known triggers and consult a qualified healthcare professional if you need help identifying safe foods."
+            safeMessage: "No AI provider is configured for this app, so it can't safely tailor meals around the allergy you entered. Please avoid known triggers and consult a doctor or registered dietitian if you need help identifying safe foods. The app administrator can enable personalized suggestions by configuring the server's AI provider."
           });
           return;
         }

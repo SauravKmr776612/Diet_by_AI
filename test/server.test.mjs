@@ -54,12 +54,14 @@ test("endpoint rejects invalid input and returns general fallback without AI con
   const validResponse = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(validInput)
+    body: JSON.stringify({ ...validInput, dietaryPattern: "vegan" })
   });
   const result = await validResponse.json();
   assert.equal(validResponse.status, 200);
   assert.equal(result.safeRedirect, false);
+  assert.equal(result.generalExample, true);
   assert.ok(result.meals.length >= 3);
+  assert.match(result.meals[0].idea, /plant-based/);
   assert.match(result.disclaimer, /not medical advice/);
 });
 
@@ -77,6 +79,22 @@ test("endpoint redirects high-risk disclosures to professional care", async t =>
   assert.equal(result.safeRedirect, true);
   assert.equal(result.meals.length, 0);
   assert.match(result.safeMessage, /doctor or registered dietitian/);
+});
+
+test("endpoint clearly explains allergy-safe fallback when AI is not configured", async t => {
+  const server = createServer({ env: {} });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/api/plan`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...validInput, allergies: "peanuts" })
+  });
+  const result = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(result.safeRedirect, true);
+  assert.equal(result.meals.length, 0);
+  assert.match(result.safeMessage, /No AI provider is configured/);
 });
 
 test("static homepage is served with a restrictive content security policy", async t => {

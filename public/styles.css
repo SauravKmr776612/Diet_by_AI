@@ -119,6 +119,7 @@ input::placeholder, textarea::placeholder { color: #a0aaa2; }
 .clinician-panel h3 { margin: 0 0 8px; }
 .clinician-panel .idea-list { padding-left: 16px; }
 .safe-message { margin: 0 0 22px; padding: 15px; border: 1px solid #f0dfc8; border-radius: 8px; background: #fff9ef; color: #694718; font-size: 12px; line-height: 1.7; }
+.general-example-notice { margin: 0 0 22px; padding: 13px 15px; border: 1px solid #dce8d9; border-radius: 8px; background: #f3f8f0; color: #425c46; font-size: 11px; line-height: 1.7; }
 .disclaimer { margin: 22px 0 0; padding-top: 15px; border-top: 1px solid #edf0eb; color: #849087; font-size: 10px; line-height: 1.7; }
 
 @media (max-width: 600px) {

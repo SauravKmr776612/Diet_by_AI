@@ -126,6 +126,8 @@ function renderResults(result) {
   const safeMessage = document.querySelector("#safe-message");
   safeMessage.hidden = !result.safeRedirect;
   safeMessage.textContent = result.safeMessage || "Please consult a doctor or registered dietitian for individual advice.";
+  const generalExampleNotice = document.querySelector("#general-example-notice");
+  generalExampleNotice.hidden = !result.generalExample;
   document.querySelector("#meal-section").hidden = result.safeRedirect;
   document.querySelector("#limit-section").hidden = result.safeRedirect;
   document.querySelector("#habit-section").hidden = result.safeRedirect;
