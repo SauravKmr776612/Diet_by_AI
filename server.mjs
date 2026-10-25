@@ -175,33 +175,24 @@ function validResult(result) {
   return result.meals.length <= 6 && result.limitFoods.length <= 8 && result.habits.length <= 8 && result.clinician.length <= 8;
 }
 
-async function generateWithAI(input, env) {
-  if (!env.SERVAM_API_KEY || !env.SERVAM_API_URL || !env.SERVAM_MODEL) return null;
-  let endpoint;
-  try {
-    endpoint = new URL(env.SERVAM_API_URL);
-  } catch {
-    throw new Error("AI service configuration is invalid.");
-  }
-  const localDevelopmentHost = ["localhost", "127.0.0.1", "::1"].includes(endpoint.hostname);
-  if (endpoint.protocol !== "https:" && !(endpoint.protocol === "http:" && localDevelopmentHost)) {
-    throw new Error("AI service configuration is invalid.");
-  }
+async function generateWithAI(input, env, fetchImpl) {
+  if (!env.SARVAM_API_KEY) return null;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20_000);
   let response;
   try {
-    response = await fetch(endpoint, {
+    response = await fetchImpl("https://api.sarvam.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${env.SERVAM_API_KEY}`
+        "api-subscription-key": env.SARVAM_API_KEY
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model: env.SERVAM_MODEL,
+        model: "sarvam-105b-conversations",
         temperature: 0.3,
+        max_tokens: 1800,
         response_format: {
           type: "json_schema",
           json_schema: { name: "nutrition_suggestions", strict: true, schema: responseSchema }
@@ -315,7 +306,7 @@ async function serveStatic(pathname, response) {
   }
 }
 
-export function createServer({ env = process.env } = {}) {
+export function createServer({ env = process.env, fetchImpl = fetch } = {}) {
   return createHttpServer(async (request, response) => {
     const pathname = new URL(request.url, "http://localhost").pathname;
     if (pathname === "/api/plan" && request.method === "POST") {
@@ -350,7 +341,7 @@ export function createServer({ env = process.env } = {}) {
         }
         let result;
         try {
-          result = await generateWithAI(validation.data, env);
+          result = await generateWithAI(validation.data, env, fetchImpl);
         } catch {
           sendJson(response, 502, { error: "Suggestions are temporarily unavailable. Please try again later." });
           return;
@@ -364,7 +355,7 @@ export function createServer({ env = process.env } = {}) {
             clinician: ["Please check ingredient labels carefully. For severe allergies or uncertainty about safe foods, consult a doctor or registered dietitian."],
             disclaimer: DISCLAIMER,
             safeRedirect: true,
-            safeMessage: "No AI provider is configured for this app, so it can't safely tailor meals around the allergy you entered. Please avoid known triggers and consult a doctor or registered dietitian if you need help identifying safe foods. The app administrator can enable personalized suggestions by configuring the server's AI provider."
+            safeMessage: "No Sarvam API key is configured for this app, so it can't safely tailor meals around the allergy you entered. Please avoid known triggers and consult a doctor or registered dietitian if you need help identifying safe foods. The app administrator can enable personalized suggestions by configuring the server's SARVAM_API_KEY."
           });
           return;
         }

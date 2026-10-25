@@ -94,7 +94,7 @@ test("endpoint clearly explains allergy-safe fallback when AI is not configured"
   assert.equal(response.status, 200);
   assert.equal(result.safeRedirect, true);
   assert.equal(result.meals.length, 0);
-  assert.match(result.safeMessage, /No AI provider is configured/);
+  assert.match(result.safeMessage, /No Sarvam API key is configured/);
 });
 
 test("static homepage is served with a restrictive content security policy", async t => {
@@ -108,35 +108,30 @@ test("static homepage is served with a restrictive content security policy", asy
 });
 
 test("endpoint sends the API key only from server configuration and validates structured AI output", async t => {
-  let receivedAuthorization;
+  let receivedApiKey;
   let receivedSchema;
-  const aiServer = (await import("node:http")).createServer(async (request, response) => {
-    const chunks = [];
-    for await (const chunk of request) chunks.push(chunk);
-    const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-    receivedAuthorization = request.headers.authorization;
-    receivedSchema = body.response_format?.json_schema?.schema;
-    const result = {
-      summary: "A flexible vegetarian idea.",
-      meals: [{ name: "Lunch", idea: "A bowl with grains and vegetables.", portion: "Adjust to appetite." }],
-      limitFoods: [],
-      habits: ["Keep water nearby."],
-      clinician: ["Discuss individual needs with a clinician."],
-      disclaimer: "Model disclaimer",
-      safeRedirect: false,
-      safeMessage: ""
-    };
-    response.writeHead(200, { "content-type": "application/json" });
-    response.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify(result) } }] }));
-  });
-  await new Promise(resolve => aiServer.listen(0, "127.0.0.1", resolve));
-  t.after(() => new Promise(resolve => aiServer.close(resolve)));
-
+  let requestedUrl;
+  const modelResult = {
+    summary: "A flexible vegetarian idea.",
+    meals: [{ name: "Lunch", idea: "A bowl with grains and vegetables.", portion: "Adjust to appetite." }],
+    limitFoods: [],
+    habits: ["Keep water nearby."],
+    clinician: ["Discuss individual needs with a clinician."],
+    disclaimer: "Model disclaimer",
+    safeRedirect: false,
+    safeMessage: ""
+  };
   const server = createServer({
-    env: {
-      SERVAM_API_KEY: "server-only-test-key",
-      SERVAM_API_URL: `http://127.0.0.1:${aiServer.address().port}/v1/chat/completions`,
-      SERVAM_MODEL: "test-model"
+    env: { SARVAM_API_KEY: "server-only-test-key" },
+    fetchImpl: async (url, options) => {
+      requestedUrl = url;
+      receivedApiKey = options.headers["api-subscription-key"];
+      const body = JSON.parse(options.body);
+      receivedSchema = body.response_format?.json_schema?.schema;
+      assert.equal(body.model, "sarvam-105b-conversations");
+      return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(modelResult) } }] }), {
+        headers: { "content-type": "application/json" }
+      });
     }
   });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -148,7 +143,8 @@ test("endpoint sends the API key only from server configuration and validates st
   });
   const result = await response.json();
   assert.equal(response.status, 200);
-  assert.equal(receivedAuthorization, "Bearer server-only-test-key");
+  assert.equal(requestedUrl, "https://api.sarvam.ai/v1/chat/completions");
+  assert.equal(receivedApiKey, "server-only-test-key");
   assert.equal(receivedSchema.type, "object");
   assert.match(result.disclaimer, /not medical advice/);
 });

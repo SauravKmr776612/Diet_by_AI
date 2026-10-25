@@ -7,10 +7,10 @@ A small, responsive wellness-planning app built with Node.js and vanilla HTML, C
 Requires Node.js 22.9 or newer.
 
 1. Copy `.env.example` to `.env`.
-2. Set `SERVAM_API_KEY`, `SERVAM_API_URL`, and `SERVAM_MODEL` in `.env` using values from your AI provider. The URL must be a full OpenAI-compatible chat-completions endpoint. Use HTTPS outside local development.
+2. Set `SARVAM_API_KEY` in `.env` using a key from your Sarvam dashboard. The server calls Sarvam's chat completions endpoint with the `sarvam-105b-conversations` model.
 3. Start the server with `npm start` and open `http://localhost:3000`.
 
-If AI settings are omitted, the app returns a small set of general, non-personalized ideas. When an allergy is disclosed without an AI service configured, it avoids generating a meal plan. Configure production secrets through your hosting provider's secret/environment-variable settings, not frontend code or committed files.
+If the Sarvam key is omitted, the app returns a small set of general, non-personalized ideas. When an allergy is disclosed without a configured AI service, it avoids generating a meal plan. Configure production secrets through your hosting provider's secret/environment-variable settings, not frontend code or committed files.
 
 ## Checks
 
